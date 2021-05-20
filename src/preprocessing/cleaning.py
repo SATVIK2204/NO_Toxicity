@@ -1,21 +1,21 @@
+import pandas as pd
 import re
 import nltk
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet
 from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer
+from nltk import wordpunct_tokenize
 
 from collections import Counter
 
 
-class DfCleaner:
+class Dfcleaner:
     def __init__(self):
         pass
 
-    def __remove(self, text, cnt, frequent, n_freq, rare, n_rare):
+    def __remove(self, text, frequent, rare, FREQWORDS, RAREWORDS):
 
-        FREQWORDS = set([w for (w, wc) in cnt.most_common(n_freq)])
-        RAREWORDS = set([w for (w, wc) in cnt.most_common()[: -n_rare - 1 : -1]])
         if frequent:
             text = " ".join(
                 [word for word in str(text).split() if word not in FREQWORDS]
@@ -29,56 +29,55 @@ class DfCleaner:
 
     # Remove the most frequent words
     def remove_frequent_rare(
-        self, lines, frequent=False, n_freq=10, rare=False, n_rare=10
+        self, raw_comments, frequent=False, n_freq=10, rare=False, n_rare=10
     ):
         cnt = Counter()
-        for line in lines:
-            for word in line.split():
+        for comment in raw_comments:
+            for word in comment.split():
                 cnt[word] += 1
-        length=len(lines)
+
+        FREQWORDS = set([w for (w, wc) in cnt.most_common(n_freq)])
+        RAREWORDS = set([w for (w, wc) in cnt.most_common()[: -n_rare - 1 : -1]])
+        length=len(raw_comments)
         i=0
-        new_line = []
-        for line in lines:
-            new_line.append(self.__remove(line, cnt, frequent, n_freq, rare, n_rare))
+        cleaned_comments = []
+        for comment in raw_comments:
+            cleaned_comments.append(self.__remove(comment, frequent, rare, FREQWORDS, RAREWORDS))
             i = i + 1
             if i % 10000 == 0:
                 print(f"{i} examples cleaned out of {length}")
             if i==length:
                 print('Cleaning Done')
 
+        cleaned_comments=[x for x in cleaned_comments if str(x)!='nan']
 
-        return new_line
+        return cleaned_comments
 
-    # Performs Various operations to clean the text
-
-    def __clean_text(self, text, remove_stopwords, stem, lemmitize):
+    def __clean_text(self, text, remove_stopwords, stem, lemitize):
+        # Lower the text
         text = text.lower()
 
-        # Remove numbers
-        text = re.sub(r"\d+", "", text)
-        text = re.sub(r"  ", " ", text)
-        text = re.sub(r" — ", " ", text)
         # Remove unwanted punctuations
+        text = re.sub(r"\d+", "", text)
+        text = re.sub(r"\n", " ", text)
+        text = re.sub(r"  ", " ", text)
         text = re.sub(r'[_"”\-;%()’“|‘+&=*%.!,?:#$@\[\]/]', " ", text)
         text = re.sub(r"\'", " ", text)
-        # Remove leading and trailing whitespaces
         text = re.sub("\s+", " ", text).strip()
 
-        # Remove stop words
+        # Remove stopwords
         if remove_stopwords:
             text = text.split()
             stops = set(stopwords.words("english"))
             text = [w for w in text if not w in stops]
             text = " ".join(text)
 
-        # Stemming the text
         if stem:
             stemmer = PorterStemmer()
             text = [stemmer.stem(word) for word in text.split()]
             text = " ".join(text)
 
-        # Lemmatizing the text
-        if lemmitize:
+        if lemitize:
             lemmatizer = WordNetLemmatizer()
             # Here we will use POS-tagging to pass on to lemmatizer using wornet to get the correct lemmitization
             wordnet_map = {
@@ -96,19 +95,19 @@ class DfCleaner:
 
         return text
 
-    def clean(self, lines, remove_stopwords=True, stem=True, lemmitize=True):
-        cleaned_lines = []
-        length = len(lines)
+    def clean(self, raw_comments, remove_stopwords=True, stem=True, lemitize=True):
+        cleaned_comments = []
         i = 0
-        for line in lines:
-            
-            cleaned_lines.append(
-                self.__clean_text(line, remove_stopwords, stem, lemmitize)
+        length = len(raw_comments)
+        for comment in raw_comments:
+            cleaned_comments.append(
+                self.__clean_text(comment, remove_stopwords, stem, lemitize)
             )
             i = i + 1
             if i % 10000 == 0:
                 print(f"{i} examples cleaned out of {length}")
-            if i==length:
-                print('Cleaning Done')
+            if i == length:
+                print("Cleaning Done")
+        cleaned_comments=[x for x in cleaned_comments if str(x)!='nan']
 
-        return cleaned_lines
+        return cleaned_comments
