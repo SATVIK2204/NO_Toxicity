@@ -26,7 +26,10 @@ class PrepareTheData(Dataset):
         self.unknown_word_token='<UNK>'
         # Helper function
         self.flatten = lambda x: [sublst for lst in x for sublst in lst]
-        
+        self.df_old=df.copy()
+
+        df=self.max_words(df)
+        self.df_new=df.copy()
         # Tokenize inputs (English) and targets (French)
         self.tokenize_df(df)
         print('Tokenization Done')
@@ -35,13 +38,14 @@ class PrepareTheData(Dataset):
         self.replace_rare_tokens(df)
         print('Replacing Done')
 
-        # Prepare variables with mappings of tokens to indices
+        # # Prepare variables with mappings of tokens to indices
         self.create_token2idx(df)
         print('token2idx created')
+        
 
         # Remove sequences with mostly <UNK>
         df = self.remove_mostly_unk(df)       
-        # self.old_df=df
+       
 
         # Convert tokens to indices
         self.tokens_to_indices(df)
@@ -49,14 +53,14 @@ class PrepareTheData(Dataset):
         print('Presprocessing done')
 
         self.labels=labels
-        
-    def __getitem__(self, idx):
-        """Return example at index idx."""
-        return self.indices_pairs[idx], self.labels[idx]
     
     def tokenize_df(self, df):
         """Turn inputs and targets into tokens."""
-        df['comment_text'] = df.comment_text.apply(tokenize)
+        df.loc[:,'comment_text'] = df.comment_text.apply(tokenize)
+
+    def max_words(self, df, max_length=100):
+        df = df[df['comment_text'].str.split().str.len().lt(max_length)]
+        return df
         
         
     def get_most_common_tokens(self, tokens_series):
@@ -64,7 +68,8 @@ class PrepareTheData(Dataset):
         all_tokens = self.flatten(tokens_series)
         # Substract 4 for <PAD>, <SOS>, <EOS>, and <UNK>
         common_tokens = set(list(zip(*Counter(all_tokens).most_common(
-            self.max_vocab - 4)))[0])
+            self.max_vocab - 2)))[0])
+
         return common_tokens
 
     def replace_rare_tokens(self, df):
@@ -78,7 +83,7 @@ class PrepareTheData(Dataset):
                             else self.unknown_word_token for token in tokens]
         )
         
-    def remove_mostly_unk(self, df, threshold=0.99):
+    def remove_mostly_unk(self, df, threshold=0.8):
         """Remove sequences with mostly <UNK>."""
         calculate_ratio = (
             lambda tokens: sum(1 for token in tokens if token != '<UNK>')
@@ -120,11 +125,15 @@ class PrepareTheData(Dataset):
         
     def tokens_to_indices(self, df):
         """Convert tokens to indices."""
-        df['comment_text'] = df.comment_text.apply(
+        df.loc[:,'comment_text'] = df.comment_text.apply(
             lambda tokens: [self.token2idx_inputs[token] for token in tokens])
 
              
         self.indices_pairs = list(df.comment_text)
+    
+    def __getitem__(self, idx):
+        """Return example at index idx."""
+        return self.indices_pairs[idx], self.labels.to_numpy()[idx]
         
     def __len__(self):
         return len(self.indices_pairs)
