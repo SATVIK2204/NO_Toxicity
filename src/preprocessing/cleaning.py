@@ -95,7 +95,7 @@ class Dfcleaner:
 
         return text
 
-    def clean(self, raw_comments, remove_stopwords=True, stem=True, lemitize=True):
+    def clean(self, raw_comments, remove_stopwords=True, stem=True, lemitize=True, is_prediction=False):
         cleaned_comments = []
         i = 0
         length = len(raw_comments)
@@ -103,11 +103,12 @@ class Dfcleaner:
             cleaned_comments.append(
                 self.__clean_text(comment, remove_stopwords, stem, lemitize)
             )
-            i = i + 1
-            if i % 10000 == 0:
-                print(f"{i} examples cleaned out of {length}")
-            if i == length:
-                print("Cleaning Done")
+            if is_prediction==False:
+                i = i + 1
+                if i % 10000 == 0:
+                    print(f"{i} examples cleaned out of {length}")
+                if i == length:
+                    print("Cleaning Done")
         cleaned_comments=[x for x in cleaned_comments if str(x)!='nan']
 
         return cleaned_comments

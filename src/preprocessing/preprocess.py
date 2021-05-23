@@ -2,19 +2,7 @@ from nltk import wordpunct_tokenize
 from torch.utils.data import Dataset
 from collections import Counter
 
-def tokenize(text):
-    """Turn text into discrete tokens.
 
-    Remove tokens that are not words.
-    """
-    text = text.lower()
-    tokens = wordpunct_tokenize(text)
-
-    # Only keep words
-    tokens = [token for token in tokens
-              if all(char.isalpha() for char in token)]
-
-    return tokens
 
 
 class PrepareTheData(Dataset):
@@ -26,10 +14,10 @@ class PrepareTheData(Dataset):
         self.unknown_word_token='<UNK>'
         # Helper function
         self.flatten = lambda x: [sublst for lst in x for sublst in lst]
-        self.df_old=df.copy()
+        # self.df_old=df.copy()
 
         df=self.max_words(df)
-        self.df_new=df.copy()
+       
         # Tokenize inputs (English) and targets (French)
         self.tokenize_df(df)
         print('Tokenization Done')
@@ -49,17 +37,32 @@ class PrepareTheData(Dataset):
 
         # Convert tokens to indices
         self.tokens_to_indices(df)
+        self.df_new=df.copy()
         print('tokens_to_indices created')
         print('Presprocessing done')
 
         self.labels=labels
     
+    def tokenize(self,text):
+        """Turn text into discrete tokens.
+
+        Remove tokens that are not words.
+        """
+        text = text.lower()
+        tokens = wordpunct_tokenize(text)
+
+        # Only keep words
+        tokens = [token for token in tokens
+                if all(char.isalpha() for char in token)]
+
+        return tokens
+
     def tokenize_df(self, df):
         """Turn inputs and targets into tokens."""
-        df.loc[:,'comment_text'] = df.comment_text.apply(tokenize)
+        df.loc[:,'comment_text'] = df.comment_text.apply(self.tokenize)
 
     def max_words(self, df, max_length=100):
-        df = df[df['comment_text'].str.split().str.len().lt(max_length)]
+        df = df.loc[df['comment_text'].str.split().str.len().lt(max_length)]
         return df
         
         
@@ -89,7 +92,7 @@ class PrepareTheData(Dataset):
             lambda tokens: sum(1 for token in tokens if token != '<UNK>')
             / len(tokens) > threshold
         )
-        df = df[df.comment_text.apply(calculate_ratio)]
+        df = df.loc[df.comment_text.apply(calculate_ratio)]
         return df
         
     def create_token2idx(self, df):
