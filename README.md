@@ -7,7 +7,8 @@ In this project, the main goal was to classify a part of speech as toxic or not 
 
 ## Setup
 Make sure you have the required python dependencies for running the project.
-Run `pip3 install -r requirements.txt` in your working environment to install the required pacakages.
+1. Run `pip3 install -r requirements.txt` in your working environment to install the required pacakages.
+2. Download the glove embeddings from https://www.kaggle.com/danielwillgeorge/glove6b100dtxt and place it in the location `NO_Toxicity.src.models`.
 
 I have not included pytorch package in the requirements.txt, so please install the pytorch version according to your cuda and cudnn versions. It is recommeneded to run the project on GPU(if available) for lower run time. Otherwise, project will default to CPU.
 
