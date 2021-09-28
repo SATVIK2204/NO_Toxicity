@@ -13,6 +13,7 @@ Make sure you have the required python dependencies for running the project.
 I have not included pytorch package in the requirements.txt, so please install the pytorch version according to your cuda and cudnn versions. It is recommeneded to run the project on GPU(if available) for lower run time. Otherwise, project will default to CPU.
 
 ## How to produce the same result?
+- First, change the name of root directory to `no_toxicity`.
 - Open the notebook name `1.no-toxicity.ipynb` present in notebooks folder.
 - Now run the cells and follow the comments in it.
 - You can see the respective source modules to see their implementation.
